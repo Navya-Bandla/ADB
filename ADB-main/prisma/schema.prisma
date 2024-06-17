@@ -1,0 +1,111 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["extendedWhereUnique"]
+}
+
+model User {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  name     String
+  email    String   @unique
+  password String
+  role     UserRole @default(STUDENT)
+
+  sections  Section[]
+  schedules StudentSchedule[]
+
+  @@map("user")
+}
+
+enum UserRole {
+  ADMIN
+  FACULTY
+  STUDENT
+}
+
+model Course {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  code      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sections Section[]
+
+  @@map("course")
+}
+
+model Room {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  no          String   @unique
+  maxCapacity Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  sections Section[]
+
+  @@map("room")
+}
+
+model Section {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  code      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  day       Day
+  startTime DateTime
+  endTime   DateTime
+
+  timeSlot TimeSlot?
+
+  course    Course            @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  courseId  String            @db.ObjectId
+  room      Room              @relation(fields: [roomId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  roomId    String            @db.ObjectId
+  faculty   User              @relation(fields: [facultyId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  facultyId String            @db.ObjectId
+  schedules StudentSchedule[]
+
+  @@map("section")
+}
+
+model TimeSlot {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  day       Day
+  startTime DateTime
+  endTime   DateTime
+
+  section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sectionId String  @unique @db.ObjectId
+
+  @@map("timeSlot")
+}
+
+model StudentSchedule {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student   User    @relation(fields: [studentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  studentId String  @db.ObjectId
+  section   Section @relation(fields: [sectionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  sectionId String  @db.ObjectId
+
+  @@map("studentSchedule")
+}
+
+enum Day {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
